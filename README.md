@@ -1,5 +1,9 @@
 # voice-bbs
 
+## environment
+
+[Deno](https://deno.land)
+
 ## how to use
 
 on console
