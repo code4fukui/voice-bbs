@@ -2,7 +2,7 @@
 
 ## environment
 
-[Deno](https://deno.land)
+[git](https://git-scm.com/), [Deno](https://deno.land)
 
 ## how to use
 
