@@ -1,0 +1,102 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>Denoでシンプルな音声BBS</title>
+
+<link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" type="text/css">
+<style>
+.bbsitem {
+  border-top: 1px solid gray;
+  margin: 1em;
+}
+.writebox {
+  border: 2px solid gray;
+  padding: 1em;
+  margin: 1em;
+}
+input, textarea {
+  width: 80%;
+}
+</style>
+
+<!-- use input-voice tag -->
+<script type="module" src="https://code4fukui.github.io/input-voice/input-voice.js"></script>
+
+</head>
+<body>
+
+<h1>Denoでシンプルな音声BBS</h1>
+
+<div id=container></div>
+
+<div class=writebox>
+  名前：<input type=text id=inp_name><br>
+  音声：<input-voice id="inp_voice" max-length=5></input-voice><br>
+  <button id=btn_write>書き込む</button>
+</div>
+
+<footer>App: CC BY <a href=https://fukuno.jig.jp/3169>@taisukef</a></footer>
+
+<script type=module>
+
+import { fetchJSON } from "https://js.sabae.cc/fetchJSON.js";
+import { base64 } from "https://taisukef.github.io/base64-js/base64.js";
+
+const enc = (s) => {
+  s = s.replace(/&/g, "&amp;");
+  s = s.replace(/</g, "&lt;");
+  s = s.replace(/>/g, "&gt;");
+  s = s.replace(/\n/g, "<br>");
+  return s;
+};
+const encBlob = async (blob) => {
+  const ba = await blob.arrayBuffer();
+  const bin = new Uint8Array(ba);
+  const s = base64.fromByteArray(bin);
+  return s;
+};
+const decAudio = (sbase64) => {
+  if (!sbase64) {
+    return null;
+  }
+  try {
+    const bin = base64.toByteArray(sbase64);
+    const blob = new Blob([bin], { type: "audio/wav" });
+    const link = URL.createObjectURL(blob);
+    return new Audio(link);
+  } catch (e) {
+    console.log(e);
+    return null;
+  }
+};
+
+window.onload = async () => {
+  const data = await fetchJSON("api/list");
+  for (const d of data) {
+    const div = document.createElement("div");
+    div.className = "bbsitem";
+    div.innerHTML = `<span class=date>${enc(d.date)}</span> by <span class=name>${enc(d.name)}</span><br>`;
+    const audio = decAudio(d.wav);
+    if (audio) {
+      const btn = document.createElement("button");
+      btn.textContent = "PLAY";
+      div.appendChild(btn);
+      btn.onclick = () => {
+        audio.play();
+      };
+    }
+    container.appendChild(div);
+  }
+  btn_write.onclick = async () => {
+    const item = {
+      name: inp_name.value,
+      wav: await encBlob(inp_voice.value),
+      date: new Date().toString()
+    };
+    if (await fetchJSON("api/add", item) == "ok") {
+      window.location.reload();
+    }
+  }
+};
+</script>
+</body>
+
+</html>
